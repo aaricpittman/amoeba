@@ -6,7 +6,7 @@ module Amoeba
   class Cloner
     extend Forwardable
 
-    attr_reader :new_object, :old_object, :object_klass
+    attr_reader :new_object, :old_object, :object_klass, :options
 
     def_delegators :old_object, :_parent_amoeba, :_amoeba_settings,
                    :_parent_amoeba_settings
@@ -121,7 +121,11 @@ module Amoeba
 
     def process_overrides
       amoeba.overrides.each do |block|
-        block.call(@old_object, @new_object)
+        if block.arity == 3
+          block.call(@old_object, @new_object, @options)
+        else
+          block.call(@old_object, @new_object)
+        end
       end
     end
 
@@ -163,7 +167,11 @@ module Amoeba
     def process_customizations
       # prepend any extra strings to indicate uniqueness of the new record(s)
       amoeba.customizations.each do |block|
-        block.call(@old_object, @new_object)
+        if block.arity == 3
+          block.call(@old_object, @new_object, @options)
+        else
+          block.call(@old_object, @new_object)
+        end
       end
     end
 
