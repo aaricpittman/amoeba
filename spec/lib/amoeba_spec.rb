@@ -272,6 +272,13 @@ describe 'amoeba' do
       expect(image_dup.save).to be_truthy
       expect(image_dup.product_id).to eq(12)
     end
+
+    it 'can be passed as an option', :focus do
+      image = ::Image.create(filename: 'test2.jpg', product_id: 12)
+      image_dup = image.amoeba_dup({overrides: [->(old, new) { new.product_id = 14 }]})
+      expect(image_dup.save).to be_truthy
+      expect(image_dup.product_id).to eq(14)
+    end
   end
 
   context 'nullify' do

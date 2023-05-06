@@ -120,7 +120,9 @@ module Amoeba
     end
 
     def process_overrides
-      amoeba.overrides.each do |block|
+      overrides = (amoeba.overrides + options.fetch(:overrides, []))
+
+      overrides.each do |block|
         if block.arity == 3
           block.call(@old_object, @new_object, @options)
         else
@@ -165,8 +167,9 @@ module Amoeba
     end
 
     def process_customizations
-      # prepend any extra strings to indicate uniqueness of the new record(s)
-      amoeba.customizations.each do |block|
+      customizations = (amoeba.customizations + options.fetch(:customizations, []))
+
+      customizations.each do |block|
         if block.arity == 3
           block.call(@old_object, @new_object, @options)
         else
