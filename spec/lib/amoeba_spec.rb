@@ -251,15 +251,17 @@ describe 'amoeba' do
     end
   end
 
-  context 'override' do
+  context 'before_associations' do
     before do
       ::Image.fresh_amoeba
       ::Image.amoeba do
-        override ->(old, new) { new.product_id = 13 if old.filename == 'test.jpg' }
+        before_associations do |old, new|
+          new.product_id = 13 if old.filename == 'test.jpg'
+        end
       end
     end
 
-    it 'overrides fields' do
+    it 'can override fields' do
       image = ::Image.create(filename: 'test.jpg', product_id: 12)
       image_dup = image.amoeba_dup
       expect(image_dup.save).to be_truthy
@@ -273,9 +275,9 @@ describe 'amoeba' do
       expect(image_dup.product_id).to eq(12)
     end
 
-    it 'can be passed as an option', :focus do
+    it 'can be passed as an option' do
       image = ::Image.create(filename: 'test2.jpg', product_id: 12)
-      image_dup = image.amoeba_dup({overrides: [->(old, new) { new.product_id = 14 }]})
+      image_dup = image.amoeba_dup({before_associations: [->(old, new) { new.product_id = 14 }]})
       expect(image_dup.save).to be_truthy
       expect(image_dup.product_id).to eq(14)
     end

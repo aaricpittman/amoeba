@@ -389,66 +389,66 @@ class Post < ActiveRecord::Base
 end
 ```
 
-#### Custom Methods
+#### Hooks
 
-##### Customize
+Amoeba provides the following hooks in the process to allow you to customize things.
 
-You may run a custom method or methods to do basically anything you like, simply pass a lambda block, or an array of lambda blocks to the `customize` directive. Each block must have the same form, meaning that each block must accept two parameters, the original object and the newly copied object. You may then do whatever you wish, like this:
+Both hooks accept 1 or more procs as well as support block syntax. The procs should accept 3 parameters `original_object`, `new_object`, and `options`. For backwards compatability they also support procs that only accept 2 parameters `original_object` and `new_object`.
+
+`options` is the options object you passed to your original call to `amoeba_dup`.
+
+##### `before_associations`
+
+Gets called after your object has been cloned but before its configured associations get cloned.
 
 ```ruby
 class Post < ActiveRecord::Base
   amoeba do
-    prepend :title => "Hello world! "
-
-    customize(lambda { |original_post,new_post|
-      if original_post.foo == "bar"
-        new_post.baz = "qux"
+    before_associations(
+      lambda do |original_post, new_post, options|
+        # stuff goes here
       end
-    })
-
-    append :comments => "... know what I'm sayin?"
+    )
   end
 end
 ```
 
-or this, using an array:
-
 ```ruby
 class Post < ActiveRecord::Base
-  has_and_belongs_to_many :tags
-
   amoeba do
-    include_association :tags
-
-    customize([
-      lambda do |orig_obj,copy_of_obj|
-        # good stuff goes here
+    before_associations(
+      lambda do |original_post, new_post, options|
+        # stuff goes here
       end,
 
-      lambda do |orig_obj,copy_of_obj|
-        # more good stuff goes here
+      lambda do |original_post, new_post, options|
+        # more stuff goes here
       end
-    ])
+    )
   end
 end
 ```
 
-##### Override
+```ruby
+class Post < ActiveRecord::Base
+  amoeba do
+    before_associations do |original_post, new_post, options|
+      # stuff goes here
+    end
+  end
+end
+```
 
-Lambda blocks passed to customize run, by default, after all copying and field pre-processing. If you wish to run a method before any customization or field pre-processing, you may use `override` the cousin of `customize`. Usage is the same as above.
+##### `after_associations`
+
+Gets called after the object's configured associations have been cloned and any field processors have been applied.
 
 ```ruby
 class Post < ActiveRecord::Base
   amoeba do
-    prepend :title => "Hello world! "
-
-    override(lambda { |original_post,new_post|
-      if original_post.foo == "bar"
-        new_post.baz = "qux"
-      end
-    })
-
-    append :comments => "... know what I'm sayin?"
+    after_associations do |original_post, new_post, options|
+      # stuff goes here
+    end
   end
 end
 ```

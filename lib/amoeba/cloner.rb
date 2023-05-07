@@ -22,9 +22,10 @@ module Amoeba
     end
 
     def run
-      process_overrides
+      before_associations
       apply if amoeba.enabled
-      after_apply if amoeba.do_preproc
+      after_associations
+
       @new_object
     end
 
@@ -119,10 +120,16 @@ module Amoeba
       follow_klass&.new(self)&.follow(relation_name, association)
     end
 
-    def process_overrides
-      overrides = (amoeba.overrides + options.fetch(:overrides, []))
+    def before_associations_hooks
+      (amoeba.before_associations + options.fetch(:before_associations, []))
+    end
 
-      overrides.each do |block|
+    def before_associations
+      process_before_associations_hooks
+    end
+
+    def process_before_associations_hooks
+      before_associations_hooks.each do |block|
         if block.arity == 3
           block.call(@old_object, @new_object, @options)
         else
@@ -131,8 +138,16 @@ module Amoeba
       end
     end
 
+    def after_associations
+      process_null_fields
+      process_coercions
+      process_prefixes
+      process_suffixes
+      process_regexes
+      process_after_associations_hooks
+    end
+
     def process_null_fields
-      # nullify any fields the user has configured
       amoeba.null_fields.each do |field_key|
         @new_object[field_key] = nil
       end
@@ -166,25 +181,18 @@ module Amoeba
       end
     end
 
-    def process_customizations
-      customizations = (amoeba.customizations + options.fetch(:customizations, []))
+    def after_associations_hooks
+      (amoeba.after_associations + options.fetch(:after_associations, []))
+    end
 
-      customizations.each do |block|
+    def process_after_associations_hooks
+      after_associations_hooks.each do |block|
         if block.arity == 3
           block.call(@old_object, @new_object, @options)
         else
           block.call(@old_object, @new_object)
         end
       end
-    end
-
-    def after_apply
-      process_null_fields
-      process_coercions
-      process_prefixes
-      process_suffixes
-      process_regexes
-      process_customizations
     end
   end
 end

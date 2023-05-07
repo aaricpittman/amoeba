@@ -5,7 +5,6 @@ module Amoeba
     DEFAULTS = {
       enabled: false,
       inherit: false,
-      do_preproc: false,
       parenting: false,
       raised: false,
       dup_method: :dup,
@@ -13,8 +12,8 @@ module Amoeba
       includes: {},
       excludes: {},
       clones: [],
-      customizations: [],
-      overrides: [],
+      after_associations: [],
+      before_associations: [],
       null_fields: [],
       coercions: {},
       prefixes: {},
@@ -123,23 +122,44 @@ module Amoeba
       push_value_to_array(value, :known_macros)
     end
 
-    { override: 'overrides', customize: 'customizations',
-      nullify: 'null_fields' }.each do |method, key|
+    {
+      before_associations: 'before_associations',
+      after_associations: 'after_associations'
+    }.each do |method, key|
       class_eval <<-EOS, __FILE__, __LINE__ + 1
-        def #{method}(value = nil)             # def override(value = nil)
-          @config[:do_preproc] = true          #   @config[:do_preproc] = true
-          push_value_to_array(value, :#{key})  #   push_value_to_array(value, :overrides)
-        end                                    # end
+        def #{method}(*hooks, &block)
+          value = 
+            if block
+              block
+            elsif hooks.length < 2
+              hooks.first
+            else
+              hooks
+            end
+
+          push_value_to_array(value, :#{key})
+        end
       EOS
     end
+    alias before_assoc before_associations
+    alias override before_associations
+    alias after_assoc after_associations
+    alias customize after_associations
 
-    { set: 'coercions', prepend: 'prefixes',
-      append: 'suffixes', regex:   'regexes' }.each do |method, key|
+    def nullify(value = nil)
+      push_value_to_array(value, :null_fields)
+    end
+
+    {
+      set: 'coercions',
+      prepend: 'prefixes',
+      append: 'suffixes',
+      regex:'regexes'
+    }.each do |method, key|
       class_eval <<-EOS, __FILE__, __LINE__ + 1
-        def #{method}(value = nil)            # def set(value = nil)
-          @config[:do_preproc] = true         #   @config[:do_preproc] = true
-          push_value_to_hash(value, :#{key})  #   push_value_to_hash(value, :coercions)
-        end                                   # end
+        def #{method}(value = nil)
+          push_value_to_hash(value, :#{key})
+        end
       EOS
     end
 
